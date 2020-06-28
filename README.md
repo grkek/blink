@@ -1,6 +1,4 @@
-# simple_rpc
-
-[![Build Status](https://travis-ci.org/kostya/simple_rpc.svg?branch=master)](http://travis-ci.org/kostya/simple_rpc)
+# Blink
 
 Remote Procedure Call Server and Client for Crystal. Implements msgpack-rpc protocall. Designed to be reliable and stable (catch every possible protocall/socket errors). It also quite performant: benchmark shows ~ 200K rps in pool mode (single server core, single client core).
 
@@ -10,18 +8,18 @@ Add this to your application's `shard.yml`:
 
 ```yaml
 dependencies:
-  simple_rpc:
-    github: kostya/simple_rpc
+  blink:
+    github: grkek/blink
 ```
 
 ## Usage
 
 ```crystal
-require "simple_rpc"
+require "blink"
 
 # Example run server and client.
 
-class MyRpc
+class Handler
   # When including Blink::Protocol, all public instance methods inside class,
   # would be exposed to external rpc call.
   # Each method should define type for each argument, and also return type.
@@ -36,21 +34,21 @@ end
 
 spawn do
   # running RPC server on 9000 port in background fiber
-  MyRpc::Server.new("127.0.0.1", 9000).run
+  Handler::Server.new("127.0.0.1", 9000).run
 end
 
 # wait until server up
 sleep 0.1
 
 # create rpc client
-client = MyRpc::Client.new("127.0.0.1", 9000)
+client = Handler::Client.new("127.0.0.1", 9000)
 result = client.bla!(3, "5.5") # here can raise Blink::Errors
 p result # => 16.5
 ```
 
 #### When client code have no access to server Protocol, you can call raw requests:
 ```crystal
-require "simple_rpc"
+require "blink"
 
 client = Blink::Client.new("127.0.0.1", 9000)
 result = client.request!(Float64, :bla, 3, "5.5") # here can raise Blink::Errors
@@ -59,7 +57,7 @@ p result # => 16.5
 
 #### When you dont want to raises on problems, you can check result by yourself:
 ```crystal
-require "simple_rpc"
+require "blink"
 
 client = Blink::Client.new("127.0.0.1", 9000)
 result = client.request(Float64, :bla, 3, "5.5") # no raise on error
@@ -72,7 +70,7 @@ end
 
 #### If you dont know what return type is, use MessagePack::Any:
 ```crystal
-require "simple_rpc"
+require "blink"
 
 client = Blink::Client.new("127.0.0.1", 9000)
 result = client.request!(MessagePack::Any, :bla, 3, "5.5")
@@ -81,7 +79,7 @@ p result.as_f + 1 # => 17.5
 
 #### If you want to exchange complex data types, you should include MessagePack::Serializable to your data
 ```crystal
-require "simple_rpc"
+require "blink"
 
 record MyResult, a : Int32, b : String { include MessagePack::Serializable }
 
