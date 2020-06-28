@@ -1,5 +1,5 @@
-module SimpleRpc
-  VERSION = "1.4.0"
+module Blink
+  VERSION = "2.0.0"
 
   REQUEST  = 0_i8
   NOTIFY   = 2_i8
@@ -12,4 +12,4 @@ module SimpleRpc
   DEFAULT_MSG_ID = 0_u32
 end
 
-require "./simple_rpc/*"
+require "./blink/*"

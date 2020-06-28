@@ -1,7 +1,7 @@
 require "../src/simple_rpc"
 
 class Bench
-  include SimpleRpc::Proto
+  include Blink::Protocol
 
   def inc(a : Int32) : Int32
     a + 1
@@ -16,11 +16,11 @@ sleep 0.5
 N = (ARGV[0]? || 1000).to_i
 mode = case (ARGV[1]? || "0")
        when "0"
-         SimpleRpc::Client::Mode::Single
+         Blink::Client::Mode::Single
        when "1"
-         SimpleRpc::Client::Mode::ConnectPerRequest
+         Blink::Client::Mode::ConnectPerRequest
        else
-         SimpleRpc::Client::Mode::Pool
+         Blink::Client::Mode::Pool
        end
 p "running in mode #{mode}, for #{N}"
 

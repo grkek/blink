@@ -1,18 +1,18 @@
 require "../src/simple_rpc"
 
 class Bench
-  include SimpleRpc::Proto
+  include Blink::Protocol
 end
 
 CONCURRENCY = (ARGV[0]? || 10).to_i
 REQUESTS    = (ARGV[1]? || 1000).to_i
 mode = case (ARGV[2]? || "0")
        when "0"
-         SimpleRpc::Client::Mode::Single
+         Blink::Client::Mode::Single
        when "1"
-         SimpleRpc::Client::Mode::ConnectPerRequest
+         Blink::Client::Mode::ConnectPerRequest
        else
-         SimpleRpc::Client::Mode::Pool
+         Blink::Client::Mode::Pool
        end
 
 puts "Running in #{mode}, requests: #{REQUESTS}, concurrency: #{CONCURRENCY}"
@@ -25,10 +25,10 @@ t = Time.local
 c = 0
 e = 0
 
-CLIENT = Bench::Client.new("127.0.0.1", 9003, mode: SimpleRpc::Client::Mode::Pool, pool_size: CONCURRENCY + 1)
+CLIENT = Bench::Client.new("127.0.0.1", 9003, mode: Blink::Client::Mode::Pool, pool_size: CONCURRENCY + 1)
 CONCURRENCY.times do
   spawn do
-    client = if mode == SimpleRpc::Client::Mode::Pool
+    client = if mode == Blink::Client::Mode::Pool
                CLIENT
              else
                Bench::Client.new("127.0.0.1", 9003, mode: mode, pool_size: CONCURRENCY + 1)

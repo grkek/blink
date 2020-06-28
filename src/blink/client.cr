@@ -2,7 +2,7 @@ require "socket"
 require "msgpack"
 require "pool/connection"
 
-class SimpleRpc::Client
+class Blink::Client
   enum Mode
     # Create new connection for every request, after request done close connection.
     # Quite slow (because spend time to create connection), but concurrency unlimited (only by OS).
@@ -45,24 +45,24 @@ class SimpleRpc::Client
   # First argument is a return type, then method and args
   #
   #   example:
-  #     res = SimpleRpc::Client.request!(type, method, *args) # => type
-  #     res = SimpleRpc::Client.request!(Float64, :bla, 1, "2.5") # => Float64
+  #     res = Blink::Client.request!(type, method, *args) # => type
+  #     res = Blink::Client.request!(Float64, :bla, 1, "2.5") # => Float64
   #
-  # raises only SimpleRpc::Errors
-  #   SimpleRpc::ProtocallError       - when problem in client-server interaction
-  #   SimpleRpc::TypeCastError        - when return type not casted to requested
-  #   SimpleRpc::RuntimeError         - when task crashed on server
-  #   SimpleRpc::CannotConnectError   - when client cant connect to server
-  #   SimpleRpc::CommandTimeoutError  - when client wait too long for answer from server
-  #   SimpleRpc::ConnectionLostError  - when client lost connection to server
-  #   SimpleRpc::PoolTimeoutError     - when no free connections in pool
+  # raises only Blink::Errors
+  #   Blink::ProtocallError       - when problem in client-server interaction
+  #   Blink::TypeCastError        - when return type not casted to requested
+  #   Blink::RuntimeError         - when task crashed on server
+  #   Blink::CannotConnectError   - when client cant connect to server
+  #   Blink::CommandTimeoutError  - when client wait too long for answer from server
+  #   Blink::ConnectionLostError  - when client lost connection to server
+  #   Blink::PoolTimeoutError     - when no free connections in pool
 
   def request!(klass : T.class, name, *args) forall T
     raw_request(name, Tuple.new(*args)) do |unpacker|
       begin
         klass.new(unpacker)
       rescue ex : MessagePack::TypeCastError
-        raise SimpleRpc::TypeCastError.new("Receive unexpected result type, expected #{klass.inspect}")
+        raise Blink::TypeCastError.new("Receive unexpected result type, expected #{klass.inspect}")
       end
     end
   end
@@ -71,27 +71,27 @@ class SimpleRpc::Client
   # First argument is a return type, then method and args
   #
   #   example:
-  #     res = SimpleRpc::Client.request(type, method, *args) # => SimpleRpc::Result(Float64)
-  #     res = SimpleRpc::Client.request(Float64, :bla, 1, "2.5") # => SimpleRpc::Result(Float64)
+  #     res = Blink::Client.request(type, method, *args) # => Blink::Result(Float64)
+  #     res = Blink::Client.request(Float64, :bla, 1, "2.5") # => Blink::Result(Float64)
   #
   #     if res.ok?
   #       p res.value! # => Float64
   #     else
-  #       p res.error! # => SimpleRpc::Errors
+  #       p res.error! # => Blink::Errors
   #     end
   #
   def request(klass : T.class, name, *args) forall T
     res = request!(klass, name, *args)
-    SimpleRpc::Result(T).new(nil, res)
-  rescue ex : SimpleRpc::Errors
-    SimpleRpc::Result(T).new(ex)
+    Blink::Result(T).new(nil, res)
+  rescue ex : Blink::Errors
+    Blink::Result(T).new(ex)
   end
 
   def notify!(name, *args)
     raw_notify(name, args)
   end
 
-  def raw_request(method, args, msgid = SimpleRpc::DEFAULT_MSG_ID)
+  def raw_request(method, args, msgid = Blink::DEFAULT_MSG_ID)
     connection = get_connection
 
     # establish connection if needed
@@ -103,7 +103,7 @@ class SimpleRpc::Client
     else
       begin
         write_request(connection, method, args, msgid)
-      rescue SimpleRpc::ConnectionError
+      rescue Blink::ConnectionError
         # reconnecting here, if needed
         write_request(connection, method, args, msgid)
       end
@@ -116,13 +116,13 @@ class SimpleRpc::Client
         msg = read_msg_id(unpacker)
         unless msgid == msg
           connection.close
-          raise SimpleRpc::ProtocallError.new("unexpected msgid: expected #{msgid}, but got #{msg}")
+          raise Blink::ProtocallError.new("unexpected msgid: expected #{msgid}, but got #{msg}")
         end
 
         yield(MessagePack::NodeUnpacker.new(unpacker.read_node))
       rescue ex : MessagePack::TypeCastError | MessagePack::UnexpectedByteError
         connection.close
-        raise SimpleRpc::ProtocallError.new(ex.message)
+        raise Blink::ProtocallError.new(ex.message)
       end
     end
 
@@ -177,13 +177,13 @@ class SimpleRpc::Client
 
     # write request to server
     if @mode.connect_per_request?
-      write_request(connection, method, args, SimpleRpc::DEFAULT_MSG_ID, true)
+      write_request(connection, method, args, Blink::DEFAULT_MSG_ID, true)
     else
       begin
-        write_request(connection, method, args, SimpleRpc::DEFAULT_MSG_ID, true)
-      rescue SimpleRpc::ConnectionError
+        write_request(connection, method, args, Blink::DEFAULT_MSG_ID, true)
+      rescue Blink::ConnectionError
         # reconnecting here, if needed
-        write_request(connection, method, args, SimpleRpc::DEFAULT_MSG_ID, true)
+        write_request(connection, method, args, Blink::DEFAULT_MSG_ID, true)
       end
     end
 
@@ -202,17 +202,17 @@ class SimpleRpc::Client
     end
   end
 
-  private def write_header(conn, method, msgid = SimpleRpc::DEFAULT_MSG_ID, notify = false)
+  private def write_header(conn, method, msgid = Blink::DEFAULT_MSG_ID, notify = false)
     sock = conn.socket
     packer = MessagePack::Packer.new(sock)
     if notify
-      packer.write_array_start(SimpleRpc::NOTIFY_SIZE)
-      packer.write(SimpleRpc::NOTIFY)
+      packer.write_array_start(Blink::NOTIFY_SIZE)
+      packer.write(Blink::NOTIFY)
       packer.write(method)
       yield packer
     else
-      packer.write_array_start(SimpleRpc::REQUEST_SIZE)
-      packer.write(SimpleRpc::REQUEST)
+      packer.write_array_start(Blink::REQUEST_SIZE)
+      packer.write(Blink::REQUEST)
       packer.write(msgid)
       packer.write(method)
       yield packer
@@ -225,13 +225,13 @@ class SimpleRpc::Client
     size = unpacker.read_array_size
     unpacker.finish_token!
 
-    unless size == SimpleRpc::RESPONSE_SIZE
-      raise MessagePack::TypeCastError.new("Unexpected result array size, should #{SimpleRpc::RESPONSE_SIZE}, not #{size}")
+    unless size == Blink::RESPONSE_SIZE
+      raise MessagePack::TypeCastError.new("Unexpected result array size, should #{Blink::RESPONSE_SIZE}, not #{size}")
     end
 
     id = Int8.new(unpacker)
 
-    unless id == SimpleRpc::RESPONSE
+    unless id == Blink::RESPONSE
       raise MessagePack::TypeCastError.new("Unexpected message result sign #{id}")
     end
 
@@ -240,7 +240,7 @@ class SimpleRpc::Client
     msg = Union(String | Nil).new(unpacker)
     if msg
       unpacker.skip_value # skip empty result
-      raise SimpleRpc::RuntimeError.new(msg)
+      raise Blink::RuntimeError.new(msg)
     end
 
     msgid
@@ -287,17 +287,17 @@ class SimpleRpc::Client
       _socket.sync = false
       _socket
     rescue ex : IO::TimeoutError | Socket::Error | IO::Error
-      raise SimpleRpc::CannotConnectError.new("#{ex.class}: #{ex.message}")
+      raise Blink::CannotConnectError.new("#{ex.class}: #{ex.message}")
     end
 
     def catch_connection_errors
       yield
     rescue ex : IO::TimeoutError
       close
-      raise SimpleRpc::CommandTimeoutError.new("Command timed out")
+      raise Blink::CommandTimeoutError.new("Command timed out")
     rescue ex : Socket::Error | IO::Error | MessagePack::EofError # Errno
       close
-      raise SimpleRpc::ConnectionLostError.new("#{ex.class}: #{ex.message}")
+      raise Blink::ConnectionLostError.new("#{ex.class}: #{ex.message}")
     end
 
     def connected?

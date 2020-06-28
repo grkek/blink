@@ -1,8 +1,8 @@
 require "./spec_helper"
 require "http/client"
 
-describe SimpleRpc do
-  [SimpleRpc::Client::Mode::ConnectPerRequest, SimpleRpc::Client::Mode::Pool, SimpleRpc::Client::Mode::Single].each do |clmode|
+describe Blink do
+  [Blink::Client::Mode::ConnectPerRequest, Blink::Client::Mode::Pool, Blink::Client::Mode::Single].each do |clmode|
     [SpecProto::Client.new(HOST, PORT, mode: clmode), SpecProto::Client.new(unixsocket: UNIXSOCK, mode: clmode)].each do |client|
       context "CLIENT(#{client.unixsocket ? "UNIX" : "TCP"}:#{clmode})" do
         it "ok" do
@@ -25,7 +25,7 @@ describe SimpleRpc do
         it "error raw request" do
           res = client.request(String, :bla, "3.5", 9.6)
           res.ok?.should eq false
-          res.message!.should eq "SimpleRpc::TypeCastError: Receive unexpected result type, expected String"
+          res.message!.should eq "Blink::TypeCastError: Receive unexpected result type, expected String"
           res.value.should eq nil
         end
 
@@ -35,7 +35,7 @@ describe SimpleRpc do
         end
 
         it "error raw request" do
-          expect_raises(SimpleRpc::TypeCastError, "Receive unexpected result type, expected String") do
+          expect_raises(Blink::TypeCastError, "Receive unexpected result type, expected String") do
             client.request!(String, :bla, "3.5", 9.6)
           end
         end
@@ -87,19 +87,19 @@ describe SimpleRpc do
 
         it "exception" do
           res = client.bla("O_o", 9.6)
-          res.message!.should eq "SimpleRpc::RuntimeError: Exception in task execution: Invalid Float64: O_o"
+          res.message!.should eq "Blink::RuntimeError: Exception in task execution: Invalid Float64: O_o"
           res.value.should eq nil
         end
 
         it "exception without wrapper" do
-          expect_raises(SimpleRpc::RuntimeError, "Exception in task execution: Invalid Float64: O_o") do
+          expect_raises(Blink::RuntimeError, "Exception in task execution: Invalid Float64: O_o") do
             client.bla!("O_o", 9.6)
           end
         end
 
         it "next request after exception should be ok (was a bug)" do
           res = client.bla("O_o", 9.6)
-          res.message!.should eq "SimpleRpc::RuntimeError: Exception in task execution: Invalid Float64: O_o"
+          res.message!.should eq "Blink::RuntimeError: Exception in task execution: Invalid Float64: O_o"
           res.value.should eq nil
 
           res = client.bla("3.5", 9.6)
@@ -110,21 +110,21 @@ describe SimpleRpc do
         it "no server" do
           client_bad = SpecProto::Client.new(HOST, PORT + 10000, mode: clmode)
           res = client_bad.bla("O_o", 9.6)
-          res.message!.should eq "SimpleRpc::CannotConnectError: Socket::ConnectError: Error connecting to '#{HOST}:#{PORT + 10000}': Connection refused"
+          res.message!.should eq "Blink::CannotConnectError: Socket::ConnectError: Error connecting to '#{HOST}:#{PORT + 10000}': Connection refused"
           res.value.should eq nil
         end
 
         it "unknown method" do
           client2 = SpecProto2::Client.new(HOST, PORT, mode: clmode)
           res = client2.zip
-          res.message!.should eq "SimpleRpc::RuntimeError: method 'zip' not found"
+          res.message!.should eq "Blink::RuntimeError: method 'zip' not found"
           res.value.should eq nil
         end
 
         it "bad params" do
           client2 = SpecProto2::Client.new(HOST, PORT, mode: clmode)
           res = client2.bla(1.3, "2.5")
-          res.message!.should eq "SimpleRpc::RuntimeError: bad arguments, expected [x : String, y : Float64], but got x: FloatT(1.3)"
+          res.message!.should eq "Blink::RuntimeError: bad arguments, expected [x : String, y : Float64], but got x: FloatT(1.3)"
           res.value.should eq nil
         end
 
@@ -142,7 +142,7 @@ describe SimpleRpc do
 
           t = Time.local
           res = client_t.sleepi(0.5, 2)
-          res.message!.should eq "SimpleRpc::CommandTimeoutError: Command timed out"
+          res.message!.should eq "Blink::CommandTimeoutError: Command timed out"
           res.value.should eq nil
           (Time.local - t).to_f.should be < 0.25
           (Time.local - t).to_f.should be >= 0.2
@@ -208,7 +208,7 @@ describe SimpleRpc do
             res.value!.should eq 1
 
             res = client.request(Int32, :unions, 1.2)
-            res.message!.should eq "SimpleRpc::RuntimeError: bad arguments, expected [x : Int32 | String], but got x: FloatT(1.2)"
+            res.message!.should eq "Blink::RuntimeError: bad arguments, expected [x : Int32 | String], but got x: FloatT(1.2)"
           end
 
           it "string" do
@@ -221,7 +221,7 @@ describe SimpleRpc do
             res.value!.should eq "1"
 
             res = client.request(Int32, :unions, 1.2)
-            res.message!.should eq "SimpleRpc::RuntimeError: bad arguments, expected [x : Int32 | String], but got x: FloatT(1.2)"
+            res.message!.should eq "Blink::RuntimeError: bad arguments, expected [x : Int32 | String], but got x: FloatT(1.2)"
           end
 
           it "float" do
@@ -234,7 +234,7 @@ describe SimpleRpc do
             res.value!.should eq 5.5
 
             res = client.request(Int32, :unions, 1.2)
-            res.message!.should eq "SimpleRpc::RuntimeError: bad arguments, expected [x : Int32 | String], but got x: FloatT(1.2)"
+            res.message!.should eq "Blink::RuntimeError: bad arguments, expected [x : Int32 | String], but got x: FloatT(1.2)"
           end
 
           it "array" do
@@ -247,7 +247,7 @@ describe SimpleRpc do
             res.value!.should eq [1, 2, 3]
 
             res = client.request(Int32, :unions, 1.2)
-            res.message!.should eq "SimpleRpc::RuntimeError: bad arguments, expected [x : Int32 | String], but got x: FloatT(1.2)"
+            res.message!.should eq "Blink::RuntimeError: bad arguments, expected [x : Int32 | String], but got x: FloatT(1.2)"
           end
 
           it "bool" do
@@ -260,7 +260,7 @@ describe SimpleRpc do
             res.value!.should eq false
 
             res = client.request(Int32, :unions, 1.2)
-            res.message!.should eq "SimpleRpc::RuntimeError: bad arguments, expected [x : Int32 | String], but got x: FloatT(1.2)"
+            res.message!.should eq "Blink::RuntimeError: bad arguments, expected [x : Int32 | String], but got x: FloatT(1.2)"
           end
         end
 
@@ -280,7 +280,7 @@ describe SimpleRpc do
 
           f.should eq 12400.0
 
-          if clmode == SimpleRpc::Client::Mode::Single
+          if clmode == Blink::Client::Mode::Single
             connects.uniq.size.should eq 1
             connects.uniq.should_not eq [nil]
           else
@@ -301,7 +301,7 @@ describe SimpleRpc do
         it "raw request, wrong arguments types" do
           res = client.request(Float64, :bla, 3.5, 1.1)
           res.ok?.should eq false
-          res.message!.should eq "SimpleRpc::RuntimeError: bad arguments, expected [x : String, y : Float64], but got x: FloatT(3.5)"
+          res.message!.should eq "Blink::RuntimeError: bad arguments, expected [x : String, y : Float64], but got x: FloatT(3.5)"
 
           # after this, should be ok request
           res = client.bla("3.5", 9.6)
@@ -312,7 +312,7 @@ describe SimpleRpc do
         it "raw request, wrong arguments types" do
           res = client.request(Float64, :bla, "3.5", "zopa")
           res.ok?.should eq false
-          res.message!.should eq "SimpleRpc::RuntimeError: bad arguments, expected [x : String, y : Float64], but got y: StringT(\"zopa\")"
+          res.message!.should eq "Blink::RuntimeError: bad arguments, expected [x : String, y : Float64], but got y: StringT(\"zopa\")"
 
           # after this, should be ok request
           res = client.bla("3.5", 9.6)
@@ -323,7 +323,7 @@ describe SimpleRpc do
         it "raw request, wrong arguments count" do
           res = client.request(Float64, :bla, "3.5")
           res.ok?.should eq false
-          res.message!.should eq "SimpleRpc::RuntimeError: bad arguments, expected [x : String, y : Float64], but got 1 args"
+          res.message!.should eq "Blink::RuntimeError: bad arguments, expected [x : String, y : Float64], but got 1 args"
 
           # after this, should be ok request
           res = client.bla("3.5", 9.6)
@@ -334,7 +334,7 @@ describe SimpleRpc do
         it "raw request, wrong arguments count" do
           res = client.request(Float64, :bla, "3.5", 10, 11, 12)
           res.ok?.should eq false
-          res.message!.should eq "SimpleRpc::RuntimeError: bad arguments, expected [x : String, y : Float64], but got 4 args"
+          res.message!.should eq "Blink::RuntimeError: bad arguments, expected [x : String, y : Float64], but got 4 args"
 
           # after this, should be ok request
           res = client.bla("3.5", 9.6)
@@ -364,10 +364,10 @@ describe SimpleRpc do
         end
 
         it "connection to bad server" do
-          client3 = SimpleRpc::Client.new(HOST, TCPPORT, mode: clmode)
+          client3 = Blink::Client.new(HOST, TCPPORT, mode: clmode)
           res = client3.request(Float64, :bla, "3.5", 9.6)
           res.ok?.should eq false
-          res.message!.should start_with("SimpleRpc::ProtocallError: Unexpected byte '193' at 0")
+          res.message!.should start_with("Blink::ProtocallError: Unexpected byte '193' at 0")
         end
 
         it "Notify messages also works" do
@@ -432,8 +432,8 @@ describe SimpleRpc do
 
             n.times do |i|
               spawn do
-                cl = if clmode == SimpleRpc::Client::Mode::Single
-                       SpecProto::Client.new(HOST, PORT, mode: SimpleRpc::Client::Mode::Single)
+                cl = if clmode == Blink::Client::Mode::Single
+                       SpecProto::Client.new(HOST, PORT, mode: Blink::Client::Mode::Single)
                      else
                        client
                      end

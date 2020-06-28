@@ -1,7 +1,7 @@
 require "../src/simple_rpc"
 
 class Bench
-  include SimpleRpc::Proto
+  include Blink::Protocol
 
   def doit(a : Float64) : Float64
     a * 1.5 + 2.33

@@ -1,4 +1,4 @@
-struct SimpleRpc::Result(T)
+struct Blink::Result(T)
   getter error, value
 
   def initialize(@error : Errors? = nil, @value : T | Nil = nil)

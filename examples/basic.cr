@@ -3,12 +3,12 @@ require "../src/simple_rpc"
 # Example run server and client.
 
 class MyRpc
-  # When including SimpleRpc::Proto, all public instance methods inside class,
+  # When including Blink::Protocol, all public instance methods inside class,
   # would be exposed to external rpc call.
   # Each method should define type for each argument, and also return type.
   # (Types of arguments should supports MessagePack::Serializable).
   # Instance of this class created on server for each call.
-  include SimpleRpc::Proto
+  include Blink::Protocol
 
   def bla(x : Int32, y : String) : Float64
     x * y.to_f

@@ -2,7 +2,7 @@ require "socket"
 require "msgpack"
 require "log"
 
-class SimpleRpc::Server
+class Blink::Server
   @server : TCPServer | UNIXServer | Nil
 
   def initialize(@host : String = "127.0.0.1", @port : Int32 = 9999, @unixsocket : String? = nil, @logger : Log? = nil, @close_connection_after_request = false)
@@ -13,20 +13,20 @@ class SimpleRpc::Server
     size = unpacker.read_array_size
     unpacker.finish_token!
 
-    request = (size == SimpleRpc::REQUEST_SIZE)
-    unless request || size == SimpleRpc::NOTIFY_SIZE
-      raise MessagePack::TypeCastError.new("Unexpected request array size, should be #{SimpleRpc::REQUEST_SIZE} or #{SimpleRpc::NOTIFY_SIZE}, not #{size}")
+    request = (size == Blink::REQUEST_SIZE)
+    unless request || size == Blink::NOTIFY_SIZE
+      raise MessagePack::TypeCastError.new("Unexpected request array size, should be #{Blink::REQUEST_SIZE} or #{Blink::NOTIFY_SIZE}, not #{size}")
     end
 
     id = Int8.new(unpacker)
 
     if request
-      raise MessagePack::TypeCastError.new("Unexpected message request sign #{id}") unless id == SimpleRpc::REQUEST
+      raise MessagePack::TypeCastError.new("Unexpected message request sign #{id}") unless id == Blink::REQUEST
     else
-      raise MessagePack::TypeCastError.new("Unexpected message notify sign #{id}") unless id == SimpleRpc::NOTIFY
+      raise MessagePack::TypeCastError.new("Unexpected message notify sign #{id}") unless id == Blink::NOTIFY
     end
 
-    msgid = request ? UInt32.new(unpacker) : SimpleRpc::DEFAULT_MSG_ID
+    msgid = request ? UInt32.new(unpacker) : Blink::DEFAULT_MSG_ID
     method = String.new(unpacker)
 
     args_count = unpacker.read_array_size
@@ -46,7 +46,7 @@ class SimpleRpc::Server
     end
   rescue ex : IO::Error | Socket::Error | MessagePack::TypeCastError | MessagePack::UnexpectedByteError
     if l = @logger
-      l.error { "SimpleRpc: protocall ERROR #{ex.message}" }
+      l.error { "Blink: protocall ERROR #{ex.message}" }
     end
   rescue ex : MessagePack::EofError
   ensure

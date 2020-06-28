@@ -1,7 +1,7 @@
 require "../src/simple_rpc"
 
 class MyRpc
-  include SimpleRpc::Proto
+  include Blink::Protocol
 
   def bla(x : Int32, y : String) : Float64
     x * y.to_f

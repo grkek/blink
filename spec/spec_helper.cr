@@ -1,5 +1,5 @@
 require "spec"
-require "../src/simple_rpc"
+require "../src/blink"
 
 L = Log.for("specs")
 L.backend = Log::IOBackend.new(File.open("spec.log", "a"))
@@ -7,12 +7,12 @@ L.backend = Log::IOBackend.new(File.open("spec.log", "a"))
 HOST     = "127.0.0.1"
 PORT     = 8888
 TCPPORT  = 8889
-UNIXSOCK = "./tmp_spec_simple_rpc.sock"
+UNIXSOCK = "./tmp_spec_blink.sock"
 
 record Bla, x : String, y : Hash(String, Int32) { include MessagePack::Serializable }
 
 class SpecProto
-  include SimpleRpc::Proto
+  include Blink::Protocol
 
   def bla(x : String, y : Float64) : Float64
     x.to_f * y
@@ -40,14 +40,14 @@ class SpecProto
     x.to_i + 1
   end
 
-  def raw_result : SimpleRpc::Context::RawMsgpack
-    SimpleRpc::Context::RawMsgpack.new({1, "bla", 6.5}.to_msgpack)
+  def raw_result : Blink::Context::RawMsgpack
+    Blink::Context::RawMsgpack.new({1, "bla", 6.5}.to_msgpack)
   end
 
-  def stream_result : SimpleRpc::Context::IOMsgpack
+  def stream_result : Blink::Context::IOMsgpack
     bytes = {1, "bla", 6.5}.to_msgpack
     io = IO::Memory.new(bytes)
-    SimpleRpc::Context::IOMsgpack.new(io)
+    Blink::Context::IOMsgpack.new(io)
   end
 
   def bin_input_args(x : Array(String), y : Float64) : String
@@ -111,7 +111,7 @@ class SpecProto
 end
 
 class SpecProto2
-  include SimpleRpc::Proto
+  include Blink::Protocol
 
   def bla(x : Float64, y : String) : Float64
     x * y.to_f

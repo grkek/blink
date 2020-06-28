@@ -22,12 +22,12 @@ require "simple_rpc"
 # Example run server and client.
 
 class MyRpc
-  # When including SimpleRpc::Proto, all public instance methods inside class,
+  # When including Blink::Protocol, all public instance methods inside class,
   # would be exposed to external rpc call.
   # Each method should define type for each argument, and also return type.
   # (Types of arguments should supports MessagePack::Serializable).
   # Instance of this class created on server for each call.
-  include SimpleRpc::Proto
+  include Blink::Protocol
 
   def bla(x : Int32, y : String) : Float64
     x * y.to_f
@@ -44,16 +44,16 @@ sleep 0.1
 
 # create rpc client
 client = MyRpc::Client.new("127.0.0.1", 9000)
-result = client.bla!(3, "5.5") # here can raise SimpleRpc::Errors
+result = client.bla!(3, "5.5") # here can raise Blink::Errors
 p result # => 16.5
 ```
 
-#### When client code have no access to server proto, you can call raw requests:
+#### When client code have no access to server Protocol, you can call raw requests:
 ```crystal
 require "simple_rpc"
 
-client = SimpleRpc::Client.new("127.0.0.1", 9000)
-result = client.request!(Float64, :bla, 3, "5.5") # here can raise SimpleRpc::Errors
+client = Blink::Client.new("127.0.0.1", 9000)
+result = client.request!(Float64, :bla, 3, "5.5") # here can raise Blink::Errors
 p result # => 16.5
 ```
 
@@ -61,7 +61,7 @@ p result # => 16.5
 ```crystal
 require "simple_rpc"
 
-client = SimpleRpc::Client.new("127.0.0.1", 9000)
+client = Blink::Client.new("127.0.0.1", 9000)
 result = client.request(Float64, :bla, 3, "5.5") # no raise on error
 if result.ok?
   p result.value! # => 16.5
@@ -74,7 +74,7 @@ end
 ```crystal
 require "simple_rpc"
 
-client = SimpleRpc::Client.new("127.0.0.1", 9000)
+client = Blink::Client.new("127.0.0.1", 9000)
 result = client.request!(MessagePack::Any, :bla, 3, "5.5")
 p result.as_f + 1 # => 17.5
 ```
@@ -96,7 +96,7 @@ class MyRequest
 end
 
 class MyRpc 
-  include SimpleRpc::Proto
+  include Blink::Protocol
 
   def doit(req : MyRequest) : MyResult
     # ...

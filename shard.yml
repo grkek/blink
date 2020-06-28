@@ -1,8 +1,8 @@
-name: simple_rpc
-version: 1.4.0
+name: blink
+version: 2.0.0
 
 authors:
-  - Konstantin Makarchev <kostya27@gmail.com>
+  - Giorgi Kavrelishvili <giorgi.kavrelishvili@pm.me>
 
 crystal: 0.27.0
 

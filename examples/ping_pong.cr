@@ -6,7 +6,7 @@ require "../src/simple_rpc"
 #      crystal examples/ping_pong.cr -- 9001 9000
 
 class MyRpc
-  include SimpleRpc::Proto
+  include Blink::Protocol
 
   def ping(port : Int32, x : Int32) : Nil
     puts "got #{x} from 127.0.0.1:#{port}"

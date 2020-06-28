@@ -1,4 +1,4 @@
-module SimpleRpc
+module Blink
   class Errors < Exception; end
 
   class CommandTimeoutError < Errors; end

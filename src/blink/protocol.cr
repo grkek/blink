@@ -1,22 +1,22 @@
 require "msgpack"
 
-module SimpleRpc::Proto
+module Blink::Protocol
   macro included
-    class Client < SimpleRpc::Client; end
-    class Server < SimpleRpc::Server; end
+    class Client < Blink::Client; end
+    class Server < Blink::Server; end
 
-    @simple_rpc_context : SimpleRpc::Context?
+    @blink_context : Blink::Context?
 
-    protected def simple_rpc_context=(ctx)
-      @simple_rpc_context = ctx
+    protected def blink_context=(ctx)
+      @blink_context = ctx
     end
 
-    protected def simple_rpc_context
-      @simple_rpc_context.not_nil!
+    protected def blink_context
+      @blink_context.not_nil!
     end
 
     macro finished
-      def self.handle_request(ctx : SimpleRpc::Context)
+      def self.handle_request(ctx : Blink::Context)
         \{% begin %}
         case ctx.method
         \{% for m in @type.methods %}
@@ -50,7 +50,7 @@ module SimpleRpc::Proto
 
               res = begin
                 obj = \{{@type}}.new
-                obj.simple_rpc_context = ctx
+                obj.blink_context = ctx
                 obj.\{{m.name}}(\{% for arg in m.args %} \%_var_\{{arg.id}, \{% end %})
               rescue ex
                 return ctx.write_error("Exception in task execution: #{ex.message}")
@@ -66,7 +66,7 @@ module SimpleRpc::Proto
       end
 
       class Server
-        def handle_request(ctx : SimpleRpc::Context)
+        def handle_request(ctx : Blink::Context)
           \{{@type}}.handle_request(ctx)
         end
       end
